@@ -1,6 +1,8 @@
 # Nostr NIP-05 Public Key Verifier
 
-This service allows you to verify that your public key is correctly associated with your NIP-05 address. The service is free to use and identifier addresses are hosted on the `verified-nostr.com` domain.
+This service allows you to verify that your public key is correctly associated with your NIP-05 address. The service is free to use and the identifier addresses are hosted on the `verified-nostr.com` domain.
+
+If you appreciate this free service, zap us some sats: `based@getalby.com`
 
 ## Usage
 
