@@ -23,7 +23,7 @@ The Nostr Public Key Verifier uses the NIP-05 protocol to verify the association
 
 The service then sends this verification request to the Nostr network, which uses its distributed ledger to confirm that your public key is correctly associated with your NIP-05 address. If the verification is successful, your account will be verified.
 
-## Security and Privacy
+## Security and privacy
 
 The Nostr Public Key Verifier is designed with security and privacy in mind. The service uses HTTPS to encrypt all communication between your browser and the server, ensuring that your data is protected in transit. The service does not store any of your personal information or public key on the server, and all data is deleted from the server after the verification is complete.
 
