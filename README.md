@@ -11,11 +11,11 @@ If you appreciate this free service:
 To verify your public key for a NIP-05 address, follow these steps:
 
 1. Go to `https://verified-nostr.com/`
-2. Enter your username and public key (hex format) into the form provided.
-3. Click the "Submit" button.
-4. We will verify within 24-48 hours.
+2. Enter your @username and public key (hex format) into the form provided.
+3. Ensure active email address is added. Click the "Submit" button.
+4. We will verify within 24-48 hours and email you once included in the verification list.
 
-If your public key is correctly associated with your NIP-05 address, you will see the verification appear on your Nostr account once we've processed your submission. If the verification fails, nothing will show and you will need to resubmit.
+If your public key is correctly associated with your NIP-05 address, you will see the `@verified-nostr.com` checkmark verification appear on your Nostr account once we've processed your submission. If the verification fails, nothing will show and you will need to resubmit.
 
 ## How it works
 
