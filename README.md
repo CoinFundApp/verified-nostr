@@ -2,7 +2,9 @@
 
 This service allows you to verify that your public key is correctly associated with your NIP-05 address. The service is free to use and the identifier addresses are hosted on the `verified-nostr.com` domain.
 
-If you appreciate this free service, zap us some sats: `based@getalby.com`
+If you appreciate this free service:
+- Zap us some sats `based@getalby.com`
+- Donate Bitcoin on `CoinFundIt.com` here: https://coinfundit.com/app/#/campaign/91e27746e3e61f76cca396b8747e552a
 
 ## Usage
 
