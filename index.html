@@ -137,7 +137,7 @@
     <div class="row justify-content-center align-items-center">
       <div class="col-lg-3 mb-5 mb-lg-0 wow fadeInUp">
         <h3 class="mb-4">Choose a plan</h3>
-        <p class="mb-5">We'll always offer a <strong>free</strong> version of our NIP-05 verification service. However, we also offer premium plans where some include a faster verification turnaround, the choice of a custom subdomain, and a quick relay without spam!</p>
+        <p class="mb-5">We'll always offer a <strong>free</strong> version of our NIP-05 verification service. However, we also offer premium plans where some include a faster verification turnaround, the choice of a <font color="#f2a900">custom subdomain (ex: bitcoin.verified-nostr.com)</font>, and a <font color="purple">quick relay</font> without spam!</p>
         <a href="#free" class="btn btn-gradient btn-split-icon rounded-pill">
           <span class="icon mai-thumbs-up-outline"></span> No, I'll stick with Free
         </a>
@@ -159,7 +159,7 @@ publishable-key="pk_live_51MdVjwJio8vtGsS5T2W26jvOpeExWFAgmhvHHPIc3vPXsnhX5BqiTe
     <h3 class="fw-normal">Free Nostr NIP-05 verification</h3>
     <form action="https://formspree.io/f/xzbqrzqw" method="POST" class="mt-3">
       <div class="form-group">
-        <label for="name" class="fw-medium fg-grey">@Username<font color="red">*</font></label>
+        <label for="name" class="fw-medium fg-grey">Nostr username<font color="red">*</font></label>
         <input type="text" class="form-control" name="username" required>
       </div>
       <div class="form-group">
@@ -245,6 +245,26 @@ publishable-key="pk_live_51MdVjwJio8vtGsS5T2W26jvOpeExWFAgmhvHHPIc3vPXsnhX5BqiTe
               <div class="accordion-content">
                <p>No. If you have lost your private key, we cannot help recover it. The NIP-05 verification process does not (from our end) require the private key. We have no way of recovering a lost private key.</p>
                <p>A lost or compromised private key would require you to create a new Nostr account and go through the verification process over again.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item wow fadeInRight">
+            <div class="accordion-trigger" id="headingNine">
+              <button class="btn collapsed" type="button" data-toggle="collapse" data-target="#collapse3" aria-expanded="false" aria-controls="collapse3">What is a custom subdomain?</button>
+            </div>
+            <div id="collapse3" class="collapse" aria-labelledby="headingNine" data-parent="#accordionFAQ">
+              <div class="accordion-content">
+                <p>All free verifications use our default @verified-nostr.com domain. For our <a href="#plan"><font color="purple">premium plans</font></a> you can choose your own subdomain to make your verification more unique to you.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item wow fadeInRight">
+            <div class="accordion-trigger" id="headingTen">
+              <button class="btn collapsed" type="button" data-toggle="collapse" data-target="#collapse3" aria-expanded="false" aria-controls="collapse3">How do I manage my Purple or Onyx subscription?</button>
+            </div>
+            <div id="collapse3" class="collapse" aria-labelledby="headingTen" data-parent="#accordionFAQ">
+              <div class="accordion-content">
+                <p>If you've subscribed to one of our <a href="#plan"><font color="purple">premium plans</font></a> you can manage the subscription <a href="https://billing.stripe.com/p/login/6oE9Dk08F0XTe08fYY" target="_blank" rel="noopener">here</a>.</p>
               </div>
             </div>
           </div>
