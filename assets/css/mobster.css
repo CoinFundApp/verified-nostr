@@ -323,9 +323,6 @@ hr {
 }
 
 @media (min-width: 1200px) {
-  .pricing-stipe {
-    margin-right:-80px !important;
-  }
   .w-xl-25 {
     width: 25% !important;
   }

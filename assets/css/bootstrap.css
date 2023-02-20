@@ -1379,6 +1379,9 @@ pre code {
 }
 
 @media (min-width: 992px) {
+  .pricing-stipe {
+    margin-right:-80px !important;
+  }
   .col-lg {
     flex-basis: 0;
     flex-grow: 1;
@@ -1592,6 +1595,9 @@ pre code {
 }
 
 @media (min-width: 1200px) {
+  .pricing-stipe {
+    margin-right:-80px !important;
+  }
   .col-xl {
     flex-basis: 0;
     flex-grow: 1;
