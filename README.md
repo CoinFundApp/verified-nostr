@@ -10,7 +10,7 @@ If you appreciate this free service:
 
 To verify your public key for a NIP-05 address, follow these steps:
 
-1. Go to `https://verified-nostr.com/`
+1. Go to `https://verified-nostr.com`
 2. Enter your @username and public key (hex format) into the form provided.
 3. Ensure active email address is added. Click the "Submit" button.
 4. We will verify within 24-48 hours and email you once included in the verification list.
@@ -19,13 +19,13 @@ If your public key is correctly associated with your NIP-05 address, you will se
 
 ## How it works
 
-The Nostr Public Key Verifier uses the NIP-05 protocol to verify the association between your public key and your NIP-05 address. When you enter your information into the verification form, the service generates a unique verification request that includes your NIP-05 address and public key.
+The Nostr Public Key Verifier uses the NIP-05 protocol to verify the association between your public key and your NIP-05 address. When you enter your information into the NIP-05 field of a Nostr client (such as Damus or Snort), the service generates a unique verification request that includes your NIP-05 address and public key.
 
-The service then sends this verification request to the Nostr network, which uses its distributed ledger to confirm that your public key is correctly associated with your NIP-05 address. If the verification is successful, your account will be verified.
+The service then sends this verification request to the Nostr network, which uses its distributed ledger to confirm that your public key is correctly associated with your @verfieid-nostr.com NIP-05 address. If the verification is successful, your account will show as verified.
 
 ## Security and privacy
 
-The Nostr Public Key Verifier is designed with security and privacy in mind. The service uses HTTPS to encrypt all communication between your browser and the server, ensuring that your data is protected in transit. The service does not store any of your personal information or public key on the server, and all data is deleted from the server after the verification is complete.
+The Nostr Public Key Verifier is designed with security and privacy in mind. The service uses HTTPS to encrypt all communication between your browser and our server, ensuring that your data is protected in transit. The service does not store your private key on the server.
 
 ## Disclaimer
 
