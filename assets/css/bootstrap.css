@@ -1379,7 +1379,7 @@ pre code {
 }
 
 @media (min-width: 992px) {
-  .pricing-stipe {
+  .pricing-stripe {
     margin-right:-80px !important;
   }
   .col-lg {
@@ -1595,7 +1595,7 @@ pre code {
 }
 
 @media (min-width: 1200px) {
-  .pricing-stipe {
+  .pricing-stripe {
     margin-right:-80px !important;
   }
   .col-xl {
