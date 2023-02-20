@@ -57,7 +57,10 @@
           <a class="nav-link" href="#faq">FAQ</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#contact">Contact</a>
+          <a class="nav-link" href="#free">Free</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#plan">Plans</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="#zaps">Donate</a>
@@ -78,7 +81,7 @@
           <h1 class="mb-4 fw-normal">Get your Nostr account verified</h1>
           <p class="mb-4">Submit a NIP-05 verification request for Nostr below <br>
           and get a verified checkmark on your account.</p>
-          <a href="#contact" class="btn btn-dark">Get Started</a>
+          <a href="#plan" class="btn btn-dark">Get Started</a>
         </div>
         <div class="col-lg-6 d-none d-lg-block wow zoomIn">
           <div class="img-place mobile-preview shadow floating-animate">
@@ -128,10 +131,34 @@
   </div>
 </div>
 
-<!-- Contact -->
-<div class="col-md-6 col-lg-5 my-3 wow fadeInUp" id="contact">
+<!-- Pricing -->
+<div class="page-section bg-image" style="background-image: url(./assets/img/pattern_1.svg);" id="plan">
+  <div class="container">
+    <div class="row justify-content-center align-items-center">
+      <div class="col-lg-5 mb-5 mb-lg-0 wow fadeInUp">
+        <h1 class="mb-4">Choose a plan</h1>
+        <p class="mb-5">We'll always offer a <strong>free</strong> version of our NIP-05 verification service. However, we also offer premium plans where some include a faster verification turnaround, the choice of a custom subdomain, and a quick relay without spam!</p>
+        <a href="#free" class="btn btn-gradient btn-split-icon rounded-pill">
+          <span class="icon mai-thumbs-up-outline"></span> No, I'll stick with Free
+        </a>
+      </div>
+      <div class="col-lg-7">
+        <div class="pricing-table">
+          <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
+<stripe-pricing-table pricing-table-id="prctbl_1MdWDqJio8vtGsS5f8CdyBAa"
+publishable-key="pk_live_51MdVjwJio8vtGsS5T2W26jvOpeExWFAgmhvHHPIc3vPXsnhX5BqiTe9X0x0vsxHeQW15kLRSgn0EfBs0AJwoROfH00OS9e6wE1">
+</stripe-pricing-table>
+        </div>
+        <p style="text-align: center;">*Custom subdomains are on a first come, first serve basis</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Free -->
+<div class="col-md-6 col-lg-5 my-3 wow fadeInUp" id="free">
   <div class="card-page">
-    <h3 class="fw-normal">Submit Nostr NIP-05 verification</h3>
+    <h3 class="fw-normal">Free Nostr NIP-05 verification</h3>
     <form action="https://formspree.io/f/xzbqrzqw" method="POST" class="mt-3">
       <div class="form-group">
         <label for="name" class="fw-medium fg-grey">@Username<font color="red">*</font></label>
@@ -141,7 +168,7 @@
         <label for="pubkey" class="fw-medium fg-grey">Public <font color="purple"><strong>hex</strong></font> key<font color="red">*</font></label>
         <input type="text" class="form-control" name="pubkey" required>
       </div>
-      <p class="fs-small"><font color="red"><strong><i class="fa fa-exclamation-circle"></i>&nbsp;NOTE:</strong></font> Your public key must be in hex format and <strong>not</strong> in <font color="purple">npub</font> or <font color="purple">nsec</font>. To get hex key use <a href="https://damus.io/key" target="_blank" rel="noopener">Damus Key Converter</a></p>
+      <p class="fs-small"><font color="red"><strong><i class="fa fa-exclamation-circle"></i>&nbsp;NOTE:</strong></font> Your public key must be hex format and <strong>not</strong> <font color="purple">npub</font> or <font color="purple">nsec</font>. To get hex key use <a href="https://damus.io/key" target="_blank" rel="noopener">Damus Key Converter</a></p>
       <div class="form-group">
         <label for="email" class="fw-medium fg-grey">Email<font color="red">*</font></label>
         <input type="text" class="form-control" name="email" required>
@@ -150,7 +177,7 @@
         <label for="message" class="fw-medium fg-grey">Anything to add?</label>
         <textarea rows="6" class="form-control" name="message"></textarea>
       </div>
-      <p>*Your information will never be shared with any third party.</p>
+      <p>*By submitting this form, you agree to have your email stored for future communication. Your information will never be shared with any third party.</p>
       <div class="form-group mt-4">
         <button type="submit" class="btn btn-primary">Submit Verification</button>
       </div>
@@ -178,7 +205,7 @@
             </div>
             <div id="collapse1" class="collapse" aria-labelledby="headingFour" data-parent="#accordionFAQ">
               <div class="accordion-content">
-                <p>Please allow up to 24-48 hours for verification requests to be processed, but we're usually pretty quick! However, the process can be expedited by making a pull request on our <a href="https://github.com/Spl0itable/verified-nostr" target="_blank" rel="noopener">GitHub</a> of the <font color="purple">/.well-known/nostr.json</font> file.</p>
+                <p>Please allow 24-48 hours for the <strong>free</strong> verification requests to be processed.<br /><br />However, the process can be expedited by selecting one of our <a href="#plan"><font color="purple">premium plans</font></a>.</p>
               </div>
             </div>
           </div>
