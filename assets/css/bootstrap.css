@@ -1382,6 +1382,9 @@ pre code {
   .pricing-stripe {
     margin-right:-80px !important;
   }
+  .plan-cta {
+    margin-top:20px !important;
+  }
   .col-lg {
     flex-basis: 0;
     flex-grow: 1;
@@ -1595,6 +1598,9 @@ pre code {
 }
 
 @media (min-width: 1200px) {
+  .plan-cta {
+    margin-top:20px !important;
+  }
   .pricing-stripe {
     margin-right:-80px !important;
   }
