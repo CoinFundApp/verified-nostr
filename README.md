@@ -30,7 +30,3 @@ The Nostr Public Key Verifier is designed with security and privacy in mind. The
 ## Disclaimer
 
 This service is not affiliated with the Nostr project. The service is offered "as is" without warranty of any kind, either expressed or implied. The creators of this service do not view or save your private key and are not responsible for any damages or losses resulting from the misuse of Nostr.
-
-## Contributing
-
-If you'd like to contribute to this project, please feel free to submit a pull request or open an issue on the GitHub repository. We welcome contributions from all members of the Nostr community.
