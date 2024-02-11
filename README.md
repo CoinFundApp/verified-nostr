@@ -4,7 +4,7 @@ This service allows you to verify that your public key is correctly associated w
 
 If you appreciate this free service:
 - Zap us some sats `poiseddryer75@walletofsatoshi.com`
-- Donate Bitcoin on `CoinFund.app` here: https://coinfund.app/app/#/campaign/c517e6d15117db9d848f600360475f8d
+- Donate Bitcoin on `CoinFund.app` here: https://coinfund.app/wallet/#/campaign/c517e6d15117db9d848f600360475f8d
 
 ## Usage
 
