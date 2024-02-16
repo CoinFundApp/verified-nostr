@@ -1383,7 +1383,7 @@ pre code {
     margin-right:-80px !important;
   }
   .plan-cta {
-    margin-top:90px !important;
+    margin-top:60px !important;
   }
   .col-lg {
     flex-basis: 0;
@@ -1599,7 +1599,7 @@ pre code {
 
 @media (min-width: 1200px) {
   .plan-cta {
-    margin-top:90px !important;
+    margin-top:60px !important;
   }
   .pricing-stripe {
     margin-right:-80px !important;
