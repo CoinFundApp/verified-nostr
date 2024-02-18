@@ -542,6 +542,14 @@
             </p>
         </div>
         <script>window.gtranslateSettings = {"default_language":"en","native_language_names":true,"detect_browser_language":true,"url_structure":"sub_domain","wrapper_selector":".gtranslate_wrapper","flag_size":24,"flag_style":"3d"}</script>
+        <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+          const canonicalLink = document.createElement('link');
+          canonicalLink.setAttribute('rel', 'canonical');
+          canonicalLink.setAttribute('href', window.location.origin + window.location.pathname);
+          document.head.appendChild(canonicalLink);
+        });
+        </script>
         <script src="https://cdn.gtranslate.net/widgets/latest/popup.js" defer></script>
         <script src="./assets/js/jquery-3.5.1.min.js"></script>
         <script src="./assets/js/bootstrap.bundle.min.js"></script>
