@@ -445,7 +445,6 @@
                     document.getElementById('nostr-form').addEventListener('submit', async function(event) {
                     event.preventDefault();
                     
-                    // Get the form elements and captcha response
                     const usernameInput = document.getElementById('username');
                     let username = usernameInput.value;
                     const nostrKeyInput = document.getElementById('nostrKey');
@@ -461,7 +460,6 @@
                                         .replace(/'/g, '&#x27;')
                                         .replace(/\//g, '&#x2F;');
                     
-                    // Check if Nostr Key input is valid
                     if (!nostrKeyInput.checkValidity()) {
                         messageBox.textContent = 'Error: ' + nostrKeyInput.validationMessage;
                         messageBox.style.color = 'red';
@@ -471,18 +469,16 @@
                     if (!captchaResponse) {
                         messageBox.textContent = 'Error: Please complete the captcha.';
                         messageBox.style.color = 'red';
-                        return; // Stop the form submission
+                        return;
                     }
                     
                     try {
-                        // Check if username is already taken by fetching the nostr.json file
+                        // Fetch the nostr.json file and check if the username is already taken
                         const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
                         const nostrJson = await nostrJsonResponse.json();
                         
-                        // Assume the file has an array of user objects with a 'username' field
-                        const isUsernameTaken = nostrJson.some(entry => entry.username.toLowerCase() === username.toLowerCase());
-                        
-                        if (isUsernameTaken) {
+                        // Check if username is a key in the 'names' object
+                        if (nostrJson.names.hasOwnProperty(username.toLowerCase())) {
                         throw new Error('The username is already taken. Please choose a different one.');
                         }
                         
