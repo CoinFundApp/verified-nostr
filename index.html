@@ -443,57 +443,70 @@
                   
                   <script>
                     document.getElementById('nostr-form').addEventListener('submit', async function(event) {
-                      event.preventDefault();
-                      
-                      const usernameInput = document.getElementById('username');
-                      let username = usernameInput.value;
-                      const nostrKeyInput = document.getElementById('nostrKey');
-                      const nostrKey = nostrKeyInput.value;
-                      const captchaResponse = document.querySelector('[name="h-captcha-response"]').value;
-                      const messageBox = document.getElementById('message');
-                  
-                      // Sanitize the username
-                      username = username.replace(/&/g, '&amp;')
-                                         .replace(/</g, '&lt;')
-                                         .replace(/>/g, '&gt;')
-                                         .replace(/"/g, '&quot;')
-                                         .replace(/'/g, '&#x27;')
-                                         .replace(/\//g, '&#x2F;');
-                      
-                      // Check if Nostr Key input is valid
-                      if (!nostrKeyInput.checkValidity()) {
+                    event.preventDefault();
+                    
+                    // Get the form elements and captcha response
+                    const usernameInput = document.getElementById('username');
+                    let username = usernameInput.value;
+                    const nostrKeyInput = document.getElementById('nostrKey');
+                    const nostrKey = nostrKeyInput.value;
+                    const captchaResponse = document.querySelector('[name="h-captcha-response"]').value;
+                    const messageBox = document.getElementById('message');
+                    
+                    // Sanitize the username
+                    username = username.replace(/&/g, '&amp;')
+                                        .replace(/</g, '&lt;')
+                                        .replace(/>/g, '&gt;')
+                                        .replace(/"/g, '&quot;')
+                                        .replace(/'/g, '&#x27;')
+                                        .replace(/\//g, '&#x2F;');
+                    
+                    // Check if Nostr Key input is valid
+                    if (!nostrKeyInput.checkValidity()) {
                         messageBox.textContent = 'Error: ' + nostrKeyInput.validationMessage;
                         messageBox.style.color = 'red';
                         return;
-                      }
-                      
-                      if (!captchaResponse) {
+                    }
+                    
+                    if (!captchaResponse) {
                         messageBox.textContent = 'Error: Please complete the captcha.';
                         messageBox.style.color = 'red';
                         return; // Stop the form submission
-                      }
-                      
-                      try {
+                    }
+                    
+                    try {
+                        // Check if username is already taken by fetching the nostr.json file
+                        const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
+                        const nostrJson = await nostrJsonResponse.json();
+                        
+                        // Assume the file has an array of user objects with a 'username' field
+                        const isUsernameTaken = nostrJson.some(entry => entry.username.toLowerCase() === username.toLowerCase());
+                        
+                        if (isUsernameTaken) {
+                        throw new Error('The username is already taken. Please choose a different one.');
+                        }
+                        
+                        // Proceed with form submission if the username is not taken
                         const response = await fetch('https://api.verified-nostr.com', {
-                          method: 'POST',
-                          headers: {
+                        method: 'POST',
+                        headers: {
                             'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ username, nostrKey, captchaResponse }),
+                        },
+                        body: JSON.stringify({ username, nostrKey, captchaResponse }),
                         });
                         
                         if (response.ok) {
-                          const responseData = await response.json();
-                          messageBox.textContent = 'Success: ' + responseData.message;
-                          messageBox.style.color = 'green';
+                        const responseData = await response.json();
+                        messageBox.textContent = 'Success: ' + responseData.message;
+                        messageBox.style.color = 'green';
                         } else {
-                          const errorResponseData = await response.json();
-                          throw new Error(errorResponseData.error || 'An unknown error occurred');
+                        const errorResponseData = await response.json();
+                        throw new Error(errorResponseData.error || 'An unknown error occurred');
                         }
-                      } catch (error) {
+                    } catch (error) {
                         messageBox.textContent = 'Error: ' + error.message;
                         messageBox.style.color = 'red';
-                      }
+                    }
                     });
                   </script>
             </div>
