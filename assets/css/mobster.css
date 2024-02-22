@@ -2274,6 +2274,14 @@ hr {
   }
 }
 
+@media (max-height: 992px) {
+  .hero-home-2 .mobile-preview {
+    max-width: 300px;
+    border-radius: 50px;
+    margin-top: 10%;
+  }
+}
+
 .hero-home-2 .badge-soft {
   padding: 8px 16px;
   border-radius: 50rem;
