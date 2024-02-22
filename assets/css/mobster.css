@@ -2263,13 +2263,13 @@ hr {
 
 .hero-home-2 .mobile-preview {
   max-width: 450px;
-  border-radius: 40px;
+  border-radius: 70px;
 }
 
 @media (max-width: 992px) {
   .hero-home-2 .mobile-preview {
     max-width: 300px;
-    border-radius: 40px;
+    border-radius: 70px;
     margin-top: 10%;
   }
 }
