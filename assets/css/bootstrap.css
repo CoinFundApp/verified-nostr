@@ -1182,8 +1182,8 @@ pre code {
   }
 
   .row-cols-md-3>* {
-    flex: 0 0 33.33333%;
-    max-width: 33.33333%;
+    flex: 0 0 100%;
+    max-width: 100%;
   }
 
   .row-cols-md-4>* {
