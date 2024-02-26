@@ -249,6 +249,15 @@
                         var successMessage = document.getElementById('successMessage');
                         var errorMessage = document.getElementById('errorMessage');
                         var networkErrorMessage = document.getElementById('networkErrorMessage');
+                        var registeredCheckbox = document.getElementById('registeredCheckbox');
+
+                        registeredCheckbox.addEventListener('change', function(event) {
+                            if (this.checked) {
+                                // Close the popup and remove the overlay
+                                usernamePopup.style.display = 'none';
+                                stripeOverlay.remove();
+                            }
+                        });
 
                         function showPopup(event) {
                             // Prevent the click from reaching the Stripe widget
@@ -343,7 +352,9 @@
                                 Yay! Username available. You can proceed to subscribe.
                             </div>
                             <div id="errorMessage" class="alert alert-danger" style="display: none;">
-                                Sorry! The username is already taken. Please choose a different one.
+                                Sorry! The username is already taken. Please choose a different one.<br />
+                                <input type="checkbox" id="registeredCheckbox" name="registered" value="registered">
+                                <label for="registeredCheckbox">I have already registered this username as a free address</label>
                             </div>
                             <div id="networkErrorMessage" class="alert alert-danger" style="display: none;">
                                 Error: There was a problem with the network connection.
@@ -517,14 +528,14 @@
                                             <br />
                                             The premium relay is limited users, all who have a paid subscription. The premium relay is therefore faster and free from spam!<br />
                                             <br />
-                                            Please allow a few hours time for processing order to include relay access.
+                                            Once subscribed, your pubkey will be automatically allowed access to our paid relay.
                                         </p>
                                     </div>
                                 </div>
                             </div>
                             <div class="accordion-item wow fadeInRight">
                                 <div class="accordion-trigger" id="headingThirteen">
-                                    <button class="btn collapsed" type="button" data-toggle="collapse" data-target="#collapse10" aria-expanded="false" aria-controls="collapse10">What is Nostr address email forwarding?</button>
+                                    <button class="btn collapsed" type="button" data-toggle="collapse" data-target="#collapse10" aria-expanded="false" aria-controls="collapse10">What is Nostr address email alias forwarding?</button>
                                 </div>
                                 <div id="collapse10" class="collapse" aria-labelledby="headingThirteen" data-parent="#accordionFAQ">
                                     <div class="accordion-content">
