@@ -242,81 +242,81 @@
                     </div>
                     <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                    var pricingStripe = document.querySelector('.pricing-stripe');
-                    var usernamePopup = document.getElementById('usernamePopup');
-                    var closePopup = document.querySelector('.close');
-                    var form = document.getElementById('usernameCheckForm');
-                    var popupMessage = document.getElementById('popupMessage');
+                        var stripeOverlay = document.querySelector('.stripe-overlay');
+                        var usernamePopup = document.getElementById('usernamePopup');
+                        var closePopup = document.querySelector('.close');
+                        var form = document.getElementById('usernameCheckForm');
+                        var popupMessage = document.getElementById('popupMessage');
 
-                    // Function to show the popup
-                    function showPopup(event) {
-                        // Calculate center position for the popup
-                        var rect = pricingStripe.getBoundingClientRect();
-                        var topPosition = (rect.height - usernamePopup.offsetHeight) / 2;
-                        var leftPosition = (rect.width - usernamePopup.offsetWidth) / 2;
-
-                        usernamePopup.style.top = `${topPosition > 0 ? topPosition : 0}px`;
-                        usernamePopup.style.left = `${leftPosition > 0 ? leftPosition : 0}px`;
-
-                        // Show the popup
-                        usernamePopup.style.display = 'block';
-                    }
-
-                    // Add the event listener to the pricing-stripe element
-                    pricingStripe.addEventListener('click', showPopup);
-
-                    // Close popup logic
-                    closePopup.addEventListener('click', function(event) {
-                        event.stopPropagation(); // Prevent click from propagating to pricingStripe
-                        usernamePopup.style.display = 'none';
-                    });
-
-                    // Close popup logic when clicking outside of the popup content
-                    window.addEventListener('click', function(event) {
-                        if (event.target === usernamePopup) {
-                        usernamePopup.style.display = 'none';
+                        function showPopup(event) {
+                            // Prevent the click from reaching the Stripe widget
+                            event.stopPropagation();
+                            // Show the popup
+                            usernamePopup.style.display = 'flex';
                         }
-                    });
 
-                    // Form submission logic
-                    form.addEventListener('submit', async function(event) {
-                        event.preventDefault();
-                        var username = document.getElementById('usernamePopupInput').value;
+                        // Add the event listener to the overlay
+                        stripeOverlay.addEventListener('click', showPopup);
 
-                        try {
-                        // Fetch the nostr.json file
-                        const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
-                        const nostrJson = await nostrJsonResponse.json();
-
-                        // Check if the username is already taken
-                        if (nostrJson.names && nostrJson.names.hasOwnProperty(username)) {
-                            popupMessage.textContent = 'Sorry! The username is already taken. Please choose a different one.';
-                            popupMessage.style.color = 'red';
-                        } else {
-                            // Username is available
-                            popupMessage.textContent = 'Yay! Username available. You can proceed to subscribe.';
-                            popupMessage.style.color = 'green';
-                            // Close the popup after 1 second
-                            setTimeout(function() {
+                        // Close popup logic when clicking the close button
+                        closePopup.addEventListener('click', function(event) {
+                            event.stopPropagation(); // Prevent the event from bubbling up to the document
                             usernamePopup.style.display = 'none';
-                            }, 1000);
-                        }
-                        } catch (error) {
-                        // Handle errors (e.g., network issues, parsing errors)
-                        popupMessage.textContent = 'Error: ' + error.message;
-                        popupMessage.style.color = 'red';
-                        }
-                    });
-                    });
+                        });
+
+                        // Close popup logic when clicking outside of the popup
+                        document.addEventListener('click', function(event) {
+                            var isClickInsidePopup = usernamePopup.contains(event.target);
+                            var isClickOnOverlay = stripeOverlay.contains(event.target);
+                            if (!isClickInsidePopup && !isClickOnOverlay) {
+                            usernamePopup.style.display = 'none';
+                            }
+                        });
+
+                        // Form submission logic
+                        form.addEventListener('submit', async function(event) {
+                            event.preventDefault();
+                            var username = document.getElementById('usernamePopupInput').value;
+
+                            try {
+                            // Fetch the nostr.json file
+                            const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
+                            const nostrJson = await nostrJsonResponse.json();
+
+                            // Check if the username is already taken
+                            if (nostrJson.names && nostrJson.names.hasOwnProperty(username)) {
+                                popupMessage.textContent = 'Sorry! The username is already taken. Please choose a different one.';
+                                popupMessage.style.color = 'red';
+                            } else {
+                                // Username is available
+                                popupMessage.textContent = 'Yay! Username available. You can proceed to subscribe.';
+                                popupMessage.style.color = 'green';
+                                
+                                // Close the popup after 1 second
+                                setTimeout(function() {
+                                usernamePopup.style.display = 'none';
+                                // Remove the click event listener from the overlay
+                                stripeOverlay.removeEventListener('click', showPopup);
+                                // Optionally, hide the overlay to allow direct interaction with the Stripe widget
+                                stripeOverlay.style.display = 'none';
+                                }, 1000);
+                            }
+                            } catch (error) {
+                            // Handle errors (e.g., network issues, parsing errors)
+                            popupMessage.textContent = 'Error: ' + error.message;
+                            popupMessage.style.color = 'red';
+                            }
+                        });
+                        });
                     </script>
                     <div id="usernamePopup" class="username-popup" style="display:none;">
                         <!-- Popup content -->
                         <div class="popup-content">
-                          <span class="close">&times;</span>
+                          <span class="close">&times;</span><br />
                           <form id="usernameCheckForm">
-                            <label for="usernamePopupInput">Enter your Nostr username:</label>
-                            <input type="text" id="usernamePopupInput" name="username" required>
-                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <label for="usernamePopupInput">Enter your Nostr username:</label><br />
+                            <input type="text" id="usernamePopupInput" name="username" required><br /><br />
+                            <button type="submit" class="btn btn-primary">Check Availability</button>
                             <p id="popupMessage"></p>
                           </form>
                         </div>
