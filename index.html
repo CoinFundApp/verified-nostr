@@ -476,6 +476,7 @@
                   <div id="message"></div>
                   
                   <script src="https://hcaptcha.com/1/api.js" async defer></script>
+                  
                   <script>
                     document.getElementById('nostr-form').addEventListener('submit', async function(event) {
                     event.preventDefault();
@@ -509,13 +510,12 @@
                     
                     try {
                         // Fetch the nostr.json file and check if the username is already taken
-                        const currentDomain = window.location.origin; // This gets the current domain
-                        const nostrJsonResponse = await fetch(`${currentDomain}/.well-known/nostr.json`);
+                        const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
                         const nostrJson = await nostrJsonResponse.json();
                         
                         // Check if username is a key in the 'names' object
-                        if (nostrJson.names.hasOwnProperty(username.toLowerCase())) {
-                            throw new Error('The username is already taken. Please choose a different one.');
+                        if (nostrJson.names.hasOwnProperty(username)) {
+                        throw new Error('The username is already taken. Please choose a different one.');
                         }
                         
                         // Proceed with form submission if the username is not taken
