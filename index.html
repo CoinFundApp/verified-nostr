@@ -242,74 +242,93 @@
                     </div>
                     <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                    var stripeOverlay = document.querySelector('.stripe-overlay');
-                    var usernamePopup = document.getElementById('usernamePopup');
-                    var closePopup = document.querySelector('.close');
-                    var form = document.getElementById('usernameCheckForm');
-                    var popupMessage = document.getElementById('popupMessage');
+                        var stripeOverlay = document.querySelector('.stripe-overlay');
+                        var usernamePopup = document.getElementById('usernamePopup');
+                        var closePopup = document.querySelector('.close');
+                        var form = document.getElementById('usernameCheckForm');
+                        var successMessage = document.getElementById('successMessage');
+                        var errorMessage = document.getElementById('errorMessage');
+                        var networkErrorMessage = document.getElementById('networkErrorMessage');
 
-                    function showPopup(event) {
-                        // Prevent the click from reaching the Stripe widget
-                        event.stopPropagation();
-                        // Show the popup
-                        usernamePopup.style.display = 'flex';
-                    }
-
-                    // Add the event listener to the overlay
-                    stripeOverlay.addEventListener('click', showPopup);
-
-                    // Close popup logic when clicking the close button
-                    closePopup.addEventListener('click', function(event) {
-                        event.stopPropagation(); // Prevent the event from bubbling up to the document
-                        usernamePopup.style.display = 'none';
-                    });
-
-                    // Close popup logic when clicking on the popup background
-                    usernamePopup.addEventListener('click', function(event) {
-                        // Check if the clicked element is the background of the popup
-                        if (event.target === usernamePopup) {
-                        usernamePopup.style.display = 'none';
+                        function showPopup(event) {
+                            // Prevent the click from reaching the Stripe widget
+                            event.stopPropagation();
+                            // Show the popup
+                            usernamePopup.style.display = 'flex';
+                            // Reset messages
+                            successMessage.style.display = 'none';
+                            errorMessage.style.display = 'none';
+                            networkErrorMessage.style.display = 'none';
                         }
-                    });
 
-                    // Prevent popup content clicks from propagating to the background
-                    var popupContent = document.querySelector('.popup-content');
-                    popupContent.addEventListener('click', function(event) {
-                        event.stopPropagation();
-                    });
+                        // Add the event listener to the overlay
+                        stripeOverlay.addEventListener('click', showPopup);
 
-                    // Form submission logic
-                    form.addEventListener('submit', async function(event) {
-                        event.preventDefault();
-                        var username = document.getElementById('usernamePopupInput').value;
-
-                        try {
-                        // Fetch the nostr.json file
-                        const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
-                        const nostrJson = await nostrJsonResponse.json();
-
-                        // Check if the username is already taken
-                        if (nostrJson.names && nostrJson.names.hasOwnProperty(username)) {
-                            popupMessage.textContent = 'Sorry! The username is already taken. Please choose a different one.';
-                            popupMessage.style.color = 'red';
-                        } else {
-                            // Username is available
-                            popupMessage.textContent = 'Yay! Username available. You can proceed to subscribe.';
-                            popupMessage.style.color = 'green';
-                            
-                            // Close the popup after 1 second
-                            setTimeout(function() {
+                        // Close popup logic when clicking the close button
+                        closePopup.addEventListener('click', function(event) {
+                            event.stopPropagation(); // Prevent the event from bubbling up to the document
                             usernamePopup.style.display = 'none';
-                            // Remove the overlay from the DOM to allow interaction with the Stripe widget
-                            stripeOverlay.remove();
-                            }, 1000);
+                        });
+
+                        // Close popup logic when clicking on the popup background
+                        usernamePopup.addEventListener('click', function(event) {
+                            // Check if the clicked element is the background of the popup
+                            if (event.target === usernamePopup) {
+                                usernamePopup.style.display = 'none';
+                            }
+                        });
+
+                        // Prevent popup content clicks from propagating to the background
+                        var popupContent = document.querySelector('.popup-content');
+                        popupContent.addEventListener('click', function(event) {
+                            event.stopPropagation();
+                        });
+
+                        // Sanitize the username
+                        function sanitizeUsername(input) {
+                            var sanitized = input.replace(/[^A-Za-z0-9]/g, '');
+                            return sanitized;
                         }
-                        } catch (error) {
-                        // Handle errors (e.g., network issues, parsing errors)
-                        popupMessage.textContent = 'Error: ' + error.message;
-                        popupMessage.style.color = 'red';
-                        }
-                    });
+
+                        // Form submission logic
+                        form.addEventListener('submit', async function(event) {
+                            event.preventDefault();
+                            var usernameInput = document.getElementById('usernamePopupInput');
+                            var username = sanitizeUsername(usernameInput.value);
+
+                            // Set the sanitized username back to the input field
+                            usernameInput.value = username;
+
+                            // Hide messages before new check
+                            successMessage.style.display = 'none';
+                            errorMessage.style.display = 'none';
+                            networkErrorMessage.style.display = 'none';
+
+                            try {
+                                // Fetch the nostr.json file
+                                const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
+                                const nostrJson = await nostrJsonResponse.json();
+
+                                // Check if the username is already taken
+                                if (nostrJson.names && nostrJson.names.hasOwnProperty(username)) {
+                                    errorMessage.style.display = 'block';
+                                } else {
+                                    // Username is available
+                                    successMessage.style.display = 'block';
+                                    
+                                    // Close the popup after 1 second
+                                    setTimeout(function() {
+                                        usernamePopup.style.display = 'none';
+                                        // Remove the overlay from the DOM to allow interaction with the Stripe widget
+                                        stripeOverlay.remove();
+                                    }, 1000);
+                                }
+                            } catch (error) {
+                                // Handle errors (e.g., network issues, parsing errors)
+                                networkErrorMessage.textContent = 'Error: ' + error.message;
+                                networkErrorMessage.style.display = 'block';
+                            }
+                        });
                     });
                     </script>
                     <div id="usernamePopup" class="username-popup" style="display:none;">
@@ -318,9 +337,17 @@
                           <span class="close">&times;</span><br />
                           <form id="usernameCheckForm">
                             <label for="usernamePopupInput">Enter your Nostr username:</label><br />
-                            <input type="text" id="usernamePopupInput" name="username" required><br /><br />
+                            <input type="text" id="usernamePopupInput" name="username" pattern="[A-Za-z0-9]{1,15}" title="Username should only contain letters and numbers." required><br /><br />
                             <button type="submit" class="btn btn-primary">Check Availability</button><br /><br />
-                            <p id="popupMessage"></p>
+                            <div id="successMessage" class="alert alert-success" style="display: none;">
+                                Yay! Username available. You can proceed to subscribe.
+                            </div>
+                            <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                                Sorry! The username is already taken. Please choose a different one.
+                            </div>
+                            <div id="networkErrorMessage" class="alert alert-danger" style="display: none;">
+                                Error: There was a problem with the network connection.
+                            </div>
                           </form>
                         </div>
                       </div>
@@ -553,77 +580,93 @@
                       <!-- Add hCaptcha container -->
                     </div>
                     <div class="form-group">
-                      <div class="h-captcha" data-sitekey="0c5b040e-c69b-4b73-9449-7fc2354e12b2"></div>
+                      <div class="h-captcha" data-sitekey="your-sitekey-here"></div>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit Verification</button>
                   </form>
                   <br />
-                  <div id="message"></div>
+                  
+                  <!-- Success and Error Message Containers -->
+                  <div id="success-message" class="alert alert-success" style="display:none;">
+                    <!-- Success message placeholder -->
+                    <p>Your account on Nostr has now been queued for verification! In 1 hour, please add <span id="success-username-placeholder">@verified-nostr.com</span> to the NIP-05 section of Plebstr, Amethyst, Damus, or other Nostr clients.</p>
+                  </div>
+                  <div id="error-message" class="alert alert-danger" style="display:none;">
+                    <!-- Error message placeholder -->
+                    <p id="error-message-content"></p>
+                  </div>
                   
                   <script src="https://hcaptcha.com/1/api.js" async defer></script>
                   
                   <script>
                     document.getElementById('nostr-form').addEventListener('submit', async function(event) {
-                    event.preventDefault();
-                    
-                    const usernameInput = document.getElementById('username');
-                    let username = usernameInput.value;
-                    const nostrKeyInput = document.getElementById('nostrKey');
-                    const nostrKey = nostrKeyInput.value;
-                    const captchaResponse = document.querySelector('[name="h-captcha-response"]').value;
-                    const messageBox = document.getElementById('message');
-                    
-                    // Sanitize the username
-                    username = username.replace(/&/g, '&amp;')
-                                        .replace(/</g, '&lt;')
-                                        .replace(/>/g, '&gt;')
-                                        .replace(/"/g, '&quot;')
-                                        .replace(/'/g, '&#x27;')
-                                        .replace(/\//g, '&#x2F;');
-                    
-                    if (!nostrKeyInput.checkValidity()) {
-                        messageBox.textContent = 'Error: ' + nostrKeyInput.validationMessage;
-                        messageBox.style.color = 'red';
+                      event.preventDefault();
+                      
+                      const usernameInput = document.getElementById('username');
+                      let username = usernameInput.value.trim();
+                      const nostrKeyInput = document.getElementById('nostrKey');
+                      const nostrKey = nostrKeyInput.value.trim();
+                      const captchaResponse = document.querySelector('[name="h-captcha-response"]').value;
+                      const successMessage = document.getElementById('success-message');
+                      const errorMessage = document.getElementById('error-message');
+                      const successUsernamePlaceholder = document.getElementById('success-username-placeholder');
+                      const errorMessageContent = document.getElementById('error-message-content');
+                      
+                      // Sanitize the username
+                      username = username.replace(/&/g, '&amp;')
+                                          .replace(/</g, '&lt;')
+                                          .replace(/>/g, '&gt;')
+                                          .replace(/"/g, '&quot;')
+                                          .replace(/'/g, '&#x27;')
+                                          .replace(/\//g, '&#x2F;');
+                      
+                      if (!nostrKeyInput.checkValidity()) {
+                        errorMessageContent.textContent = 'Error: ' + nostrKeyInput.validationMessage;
+                        errorMessage.style.display = 'block';
+                        successMessage.style.display = 'none';
                         return;
-                    }
-                    
-                    if (!captchaResponse) {
-                        messageBox.textContent = 'Error: Please complete the captcha.';
-                        messageBox.style.color = 'red';
+                      }
+                      
+                      if (!captchaResponse) {
+                        errorMessageContent.textContent = 'Error: Please complete the captcha.';
+                        errorMessage.style.display = 'block';
+                        successMessage.style.display = 'none';
                         return;
-                    }
-                    
-                    try {
+                      }
+                      
+                      try {
                         // Fetch the nostr.json file and check if the username is already taken
                         const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
                         const nostrJson = await nostrJsonResponse.json();
                         
                         // Check if username is a key in the 'names' object
                         if (nostrJson.names.hasOwnProperty(username)) {
-                        throw new Error('Sorry! The username is already taken. Please choose a different one.');
+                          throw new Error('Sorry! The username is already taken. Please choose a different one.');
                         }
                         
                         // Proceed with form submission if the username is not taken
                         const response = await fetch('https://api.verified-nostr.com', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ username, nostrKey, captchaResponse }),
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ username, nostrKey, captchaResponse }),
                         });
                         
                         if (response.ok) {
-                        const responseData = await response.json();
-                        messageBox.textContent = 'Success: ' + responseData.message;
-                        messageBox.style.color = 'green';
+                          const responseData = await response.json();
+                          successUsernamePlaceholder.textContent = username + '@verified-nostr.com';
+                          successMessage.style.display = 'block';
+                          errorMessage.style.display = 'none';
                         } else {
-                        const errorResponseData = await response.json();
-                        throw new Error(errorResponseData.error || 'An unknown error occurred');
+                          const errorResponseData = await response.json();
+                          throw new Error(errorResponseData.error || 'An unknown error occurred.');
                         }
-                    } catch (error) {
-                        messageBox.textContent = 'Error: ' + error.message;
-                        messageBox.style.color = 'red';
-                    }
+                      } catch (error) {
+                        errorMessageContent.textContent = 'Error: ' + error.message;
+                        errorMessage.style.display = 'block';
+                        successMessage.style.display = 'none';
+                      }
                     });
                   </script>
                   <p style="text-align: center; margin-top: 50px;">If you appreciate the free service:</p>
