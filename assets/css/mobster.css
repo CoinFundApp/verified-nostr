@@ -2876,17 +2876,23 @@ hr {
   }
 }
 
+.pricing-stripe {
+  position: relative; /* This makes it a reference for absolutely positioned children */
+}
+
 .username-popup {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* Ensure it's above other elements */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%; /* Adjust the width as needed */
+  max-width: 400px; /* Or whatever maximum width you prefer */
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000; /* Ensure it's above other elements within .pricing-stripe */
+  display: none; /* Initially hidden */
 }
 
 .popup-content {
@@ -2900,4 +2906,13 @@ hr {
   float: right;
   font-size: 28px;
   cursor: pointer;
+}
+
+.stripe-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 10; /* Adjust the z-index to be above the Stripe widget but below your popup */
 }
