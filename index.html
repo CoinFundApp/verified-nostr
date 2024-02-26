@@ -509,12 +509,13 @@
                     
                     try {
                         // Fetch the nostr.json file and check if the username is already taken
-                        const nostrJsonResponse = await fetch('https://verified-nostr.com/.well-known/nostr.json');
+                        const currentDomain = window.location.origin; // This gets the current domain
+                        const nostrJsonResponse = await fetch(`${currentDomain}/.well-known/nostr.json`);
                         const nostrJson = await nostrJsonResponse.json();
                         
                         // Check if username is a key in the 'names' object
                         if (nostrJson.names.hasOwnProperty(username.toLowerCase())) {
-                        throw new Error('The username is already taken. Please choose a different one.');
+                            throw new Error('The username is already taken. Please choose a different one.');
                         }
                         
                         // Proceed with form submission if the username is not taken
