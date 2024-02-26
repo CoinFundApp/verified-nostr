@@ -576,8 +576,6 @@
                       <label for="nostrKey" class="fw-medium fg-grey">Public <font color="purple"><strong>hex</strong></font> key <font color="red">*</font></label>
                       <input type="text" id="nostrKey" name="nostrKey" class="form-control" required
                              pattern="^[0-9a-fA-F]{64}$" title="Pubkey must be in hex format">
-                      
-                      <!-- Add hCaptcha container -->
                     </div>
                     <div class="form-group">
                       <div class="h-captcha" data-sitekey="0c5b040e-c69b-4b73-9449-7fc2354e12b2"></div>
@@ -588,12 +586,22 @@
                   
                   <!-- Success and Error Message Containers -->
                   <div id="success-message" class="alert alert-success" style="display:none;">
-                    <!-- Success message placeholder -->
+                    <!-- Success message content -->
                     <p>Your account on Nostr has now been queued for verification! In 1 hour, please add <span id="success-username-placeholder">@verified-nostr.com</span> to the NIP-05 section of Plebstr, Amethyst, Damus, or other Nostr clients.</p>
                   </div>
-                  <div id="error-message" class="alert alert-danger" style="display:none;">
-                    <!-- Error message placeholder -->
-                    <p id="error-message-content"></p>
+                  
+                  <!-- Predefined Error Messages -->
+                  <div id="error-key-invalid" class="alert alert-danger" style="display:none;">
+                    <p>Error: Public key must be in hex format.</p>
+                  </div>
+                  <div id="error-captcha" class="alert alert-danger" style="display:none;">
+                    <p>Error: Please complete the captcha.</p>
+                  </div>
+                  <div id="error-taken" class="alert alert-danger" style="display:none;">
+                    <p>Error: Sorry! The username is already taken. Please choose a different one.</p>
+                  </div>
+                  <div id="error-unknown" class="alert alert-danger" style="display:none;">
+                    <p>Error: An unknown error occurred.</p>
                   </div>
                   
                   <script src="https://hcaptcha.com/1/api.js" async defer></script>
@@ -608,9 +616,13 @@
                       const nostrKey = nostrKeyInput.value.trim();
                       const captchaResponse = document.querySelector('[name="h-captcha-response"]').value;
                       const successMessage = document.getElementById('success-message');
-                      const errorMessage = document.getElementById('error-message');
                       const successUsernamePlaceholder = document.getElementById('success-username-placeholder');
-                      const errorMessageContent = document.getElementById('error-message-content');
+                      
+                      // Hide all messages before displaying the new one
+                      const errorMessages = document.querySelectorAll('.alert-danger');
+                      errorMessages.forEach(function(msg) {
+                        msg.style.display = 'none';
+                      });
                       
                       // Sanitize the username
                       username = username.replace(/&/g, '&amp;')
@@ -620,16 +632,16 @@
                                           .replace(/'/g, '&#x27;')
                                           .replace(/\//g, '&#x2F;');
                       
+                      let errorMessageElement = null;
+                      
                       if (!nostrKeyInput.checkValidity()) {
-                        errorMessageContent.textContent = 'Error: ' + nostrKeyInput.validationMessage;
-                        errorMessage.style.display = 'block';
-                        successMessage.style.display = 'none';
-                        return;
+                        errorMessageElement = document.getElementById('error-key-invalid');
+                      } else if (!captchaResponse) {
+                        errorMessageElement = document.getElementById('error-captcha');
                       }
                       
-                      if (!captchaResponse) {
-                        errorMessageContent.textContent = 'Error: Please complete the captcha.';
-                        errorMessage.style.display = 'block';
+                      if (errorMessageElement) {
+                        errorMessageElement.style.display = 'block';
                         successMessage.style.display = 'none';
                         return;
                       }
@@ -641,10 +653,11 @@
                         
                         // Check if username is a key in the 'names' object
                         if (nostrJson.names.hasOwnProperty(username)) {
-                          throw new Error('Sorry! The username is already taken. Please choose a different one.');
+                          errorMessageElement = document.getElementById('error-taken');
+                          throw new Error();
                         }
                         
-                        // Proceed with form submission if the username is not taken
+                        // Proceed with form submission if the username is nottaken
                         const response = await fetch('https://api.verified-nostr.com', {
                           method: 'POST',
                           headers: {
@@ -657,14 +670,14 @@
                           const responseData = await response.json();
                           successUsernamePlaceholder.textContent = username + '@verified-nostr.com';
                           successMessage.style.display = 'block';
-                          errorMessage.style.display = 'none';
                         } else {
                           const errorResponseData = await response.json();
                           throw new Error(errorResponseData.error || 'An unknown error occurred.');
                         }
                       } catch (error) {
-                        errorMessageContent.textContent = 'Error: ' + error.message;
-                        errorMessage.style.display = 'block';
+                        // If errorMessageElement is not set, it's an unknown error
+                        errorMessageElement = errorMessageElement || document.getElementById('error-unknown');
+                        errorMessageElement.style.display = 'block';
                         successMessage.style.display = 'none';
                       }
                     });
