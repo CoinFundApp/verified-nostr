@@ -300,8 +300,8 @@
                             // Close the popup after 1 second
                             setTimeout(function() {
                             usernamePopup.style.display = 'none';
-                            // Remove the click event listener from the overlay
-                            stripeOverlay.removeEventListener('click', showPopup);
+                            // Remove the overlay from the DOM to allow interaction with the Stripe widget
+                            stripeOverlay.remove();
                             }, 1000);
                         }
                         } catch (error) {
