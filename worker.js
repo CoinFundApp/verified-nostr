@@ -55,7 +55,7 @@ async function handleScheduledEvent(event) {
 
         // Get the response body text which contains the outcome message
         const responseBody = await updateResult.text();
-        console.log(`Scheduled event updated whitelist: ${responseBody}`);
+        console.log(`Checking pubkey whitelist: ${responseBody}`);
     } catch (error) {
         // Handle any errors that occur during the update
         console.error('Error during whitelist update:', error);
