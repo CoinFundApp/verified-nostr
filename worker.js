@@ -184,7 +184,7 @@ async function updateAllowedPubkeys() {
         }
         // Parse the new list of allowed pubkeys
         const whitelistText = await response.text();
-        const newAllowedPubkeys = whitelistText.trim().split('\n').map(line => line.replace(/"/g, '').trim());
+        const newAllowedPubkeys = whitelistText.trim().split('\n').map(line => line.replace(/[",]/g, '').trim());
 
         // Fetch the current list of allowed pubkeys from the KV store
         const currentAllowedPubkeysJSON = await saveAllowedPubkeys.get(ALLOWED_PUBKEYS_KEY);
