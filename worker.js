@@ -261,7 +261,7 @@ async function handleWebSocket(event, request) {
 async function processEvent(event, server) {
     try {
         // Check if the pubkey is allowed
-        if (!isPubkeyAllowed(event.pubkey)) {
+        if (!await isPubkeyAllowed(event.pubkey)) {
             sendOK(server, event.id, false, "This pubkey is not allowed.");
             return;
         }
