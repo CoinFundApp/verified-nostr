@@ -8,7 +8,7 @@ const relayInfo = {
     contact: "support@verified-nostr.com",
     supported_nips: [1, 2, 4, 9, 11, 12, 15, 16, 20, 22, 33, 40],
     software: "https://github.com/Spl0itable/nosflare",
-    version: "1.8.6",
+    version: "1.8.7",
 };
 
 // Relay favicon
@@ -108,15 +108,20 @@ async function serveFavicon() {
 const relayCache = {
     _cache: {},
     get(key) {
-        return this._cache[key];
+        const entry = this._cache[key];
+        if (entry && !isExpired(entry.timestamp)) {
+            return entry.value;
+        }
+        return null;
     },
     set(key, value) {
-        this._cache[key] = value;
+        this._cache[key] = { value, timestamp: Date.now() };
     },
     delete(key) {
         delete this._cache[key];
     },
 };
+const recentEventsCache = 'recent_events_cache';
 // Check if the cached events have expired
 function isExpired(timestamp) {
     const expirationTime = 60 * 60 * 1000; // 1 hour in milliseconds
@@ -256,7 +261,7 @@ async function handleWebSocket(event, request) {
 async function processEvent(event, server) {
     try {
         // Check if the pubkey is allowed
-        if (!await isPubkeyAllowed(event.pubkey)) {
+        if (!isPubkeyAllowed(event.pubkey)) {
             sendOK(server, event.id, false, "This pubkey is not allowed.");
             return;
         }
@@ -273,7 +278,7 @@ async function processEvent(event, server) {
         const cacheKey = `event:${event.id}`;
         const cachedEvent = relayCache.get(cacheKey);
         if (cachedEvent) {
-            // Event found in cache, skip KV store request
+            // Event found in cache and not expired, skip KV store request
             sendOK(server, event.id, false, "Duplicate. Event dropped.");
             return;
         }
@@ -290,6 +295,15 @@ async function processEvent(event, server) {
             // Store the event in KV store and cache
             await relayDb.put(cacheKey, JSON.stringify(event));
             relayCache.set(cacheKey, event);
+            // Update the recent events cache if the event is of kind 1
+            if (event.kind === 1) {
+                const recentEvents = relayCache.get(recentEventsCache) || [];
+                recentEvents.unshift(event);
+                if (recentEvents.length > 50) {
+                    recentEvents.pop();
+                }
+                relayCache.set(recentEventsCache, recentEvents);
+            }
             sendOK(server, event.id, true, "");
         } else {
             sendOK(server, event.id, false, "Invalid: signature verification failed.");
@@ -327,33 +341,46 @@ async function processReq(message, server) {
             server.send(JSON.stringify(["NOTICE", subscriptionId, `Only the first ${maxEventIds} event IDs were processed.`]));
         }
     } else {
-        // No filters, retrieve most recent kind 1 events
-        try {
-            const latestEventsKeys = await relayDb.list({ prefix: "event:", limit: 50, reverse: true }); // Limit of 50 events
-            const eventPromises = latestEventsKeys.keys.map(async (key) => {
-                try {
-                    const event = await getEventFromCacheOrKV(key.name.replace('event:', ''));
-                    if (event && event.kind === 1) {
-                        return event;
-                    }
-                    return null;
-                } catch (error) {
-                    if (error.message === 'Rate limit exceeded for KV store access') {
-                        console.error(`Rate limit exceeded while retrieving event ${key.name}:`, error);
+        // Check the cache for the list of recent events
+        const cachedRecentEvents = relayCache.get(recentEventsCache);
+        if (cachedRecentEvents) {
+            events = cachedRecentEvents.filter(event => !isExpired(event.timestamp));
+            if (events.length > 0) {
+                relayCache.set(recentEventsCache, events);
+            } else {
+                relayCache.delete(recentEventsCache);
+            }
+        }
+        if (events.length === 0) {
+            // No cached events or all events have expired, retrieve from the KV store
+            try {
+                const latestEventsKeys = await relayDb.list({ prefix: "event:", limit: 50, reverse: true });
+                const eventPromises = latestEventsKeys.keys.map(async (key) => {
+                    try {
+                        const event = await getEventFromCacheOrKV(key.name.replace('event:', ''));
+                        if (event && event.kind === 1) {
+                            return event;
+                        }
+                        return null;
+                    } catch (error) {
+                        if (error.message === 'Rate limit exceeded for KV store access') {
+                            console.error(`Rate limit exceeded while retrieving event ${key.name}:`, error);
+                            return null;
+                        }
+                        console.error(`Error retrieving event ${key.name}:`, error);
                         return null;
                     }
-                    console.error(`Error retrieving event ${key.name}:`, error);
-                    return null;
-                }
-            });
-            events = (await Promise.all(eventPromises)).filter(event => event !== null);
-        } catch (error) {
-            console.error("Error listing latest events:", error);
-            server.send(JSON.stringify(["NOTICE", subscriptionId, "Error listing latest events"]));
-            return;
+                });
+                events = (await Promise.all(eventPromises)).filter(event => event !== null);
+                // Store the retrieved events in the cache with their timestamps
+                relayCache.set(recentEventsCache, events.map(event => ({ ...event, timestamp: Date.now() })));
+            } catch (error) {
+                console.error("Error listing latest events:", error);
+                server.send(JSON.stringify(["NOTICE", subscriptionId, "Error listing latest events"]));
+                return;
+            }
         }
     }
-
     // Send events to the client
     for (const event of events) {
         server.send(JSON.stringify(["EVENT", subscriptionId, event]));
