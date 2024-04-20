@@ -6,9 +6,9 @@ const relayInfo = {
     description: "A premium Nostr relay from Verified-Nostr.com powered by Nosflare",
     pubkey: "d49a9023a21dba1b3c8306ca369bf3243d8b44b8f0b6d1196607f7b0990fa8df",
     contact: "support@verified-nostr.com",
-    supported_nips: [1, 2, 4, 9, 11, 12, 15, 16, 20, 22, 33, 40],
+    supported_nips: [1, 2, 4, 5, 9, 11, 12, 15, 16, 20, 22, 33, 40],
     software: "https://github.com/Spl0itable/nosflare",
-    version: "1.13.9",
+    version: "1.14.9",
 };
 
 // Relay favicon
