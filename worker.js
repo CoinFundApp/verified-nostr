@@ -71,7 +71,6 @@ const ALLOWED_PUBKEYS_KEY = 'allowedPubkeys';
 addEventListener('scheduled', event => {
     event.waitUntil(
         Promise.all([
-            cleanUpExpiredCacheEntries(),
             handleScheduledEvent(event)
         ])
     );
