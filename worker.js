@@ -8,11 +8,17 @@ const relayInfo = {
     contact: "support@verified-nostr.com",
     supported_nips: [1, 2, 4, 9, 11, 12, 15, 16, 20, 22, 33, 40],
     software: "https://github.com/Spl0itable/nosflare",
-    version: "1.12.9",
+    version: "1.13.9",
 };
 
 // Relay favicon
 const relayIcon = "https://verified-nostr.com/assets/favicon.png";
+
+// Nostr address NIP-05 verified users
+const nip05Users = {
+  "lucas": "d49a9023a21dba1b3c8306ca369bf3243d8b44b8f0b6d1196607f7b0990fa8df",
+  // ... more NIP-05 verified users
+};
 
 // Blocked pubkeys
 // Add pubkeys in hex format as strings to block write access
@@ -36,6 +42,26 @@ function isEventKindAllowed(kind) {
         return false;
     }
     return !blockedEventKinds.has(kind);
+}
+
+// Blocked words or phrases (case-insensitive)
+const blockedContent = new Set([
+  "nigger",
+  "~~ hello world! ~~",
+  // ... more blocked content
+]);
+function containsBlockedContent(event) {
+  const lowercaseContent = (event.content || "").toLowerCase();
+  const lowercaseTags = event.tags.map(tag => tag.join("").toLowerCase());
+  for (const blocked of blockedContent) {
+    if (
+      lowercaseContent.includes(blocked) ||
+      lowercaseTags.some(tag => tag.includes(blocked))
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Path to trigger the update of allowed pubkeys
@@ -119,6 +145,8 @@ addEventListener("fetch", (event) => {
         new Response("Connect using a Nostr client", { status: 200 })
       );
     }
+  } else if (url.pathname === "/.well-known/nostr.json") {
+    event.respondWith(handleNIP05Request(url));
   } else if (url.pathname === "/favicon.ico") {
     event.respondWith(serveFavicon(event));
   } else {
@@ -146,9 +174,73 @@ async function serveFavicon() {
   }
   return new Response(null, { status: 404 });
 }
+async function handleNIP05Request(url) {
+  const name = url.searchParams.get("name");
+  if (!name) {
+    return new Response(JSON.stringify({ error: "Missing 'name' parameter" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const pubkey = nip05Users[name.toLowerCase()];
+  if (!pubkey) {
+    return new Response(JSON.stringify({ error: "User not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const response = {
+    names: {
+      [name]: pubkey,
+    },
+    relays: {
+      [pubkey]: [
+        // Add relay URLs for NIP-05 users
+      ],
+    },
+  };
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+}
 
-// Rate-limit messages
-class RateLimiter {
+// Use in-memory cache
+const relayCache = {
+  _cache: {},
+  get(key) {
+    return this._cache[key]?.value || null;
+  },
+  set(key, value) {
+    this._cache[key] = { value, timestamp: Date.now() };
+  },
+  delete(key) {
+    delete this._cache[key];
+  },
+};
+const recentEventsCache = 'recent_events_cache';
+function generateSubscriptionCacheKey(filters) {
+  const filterKeys = Object.keys(filters).sort();
+  const cacheKey = filterKeys.map(key => {
+    let value = filters[key];
+    if (Array.isArray(value)) {
+      if (key === 'kinds' || key === 'authors' || key === '#e' || key === '#p' || key === 'ids') {
+        value = value.sort().join(',');
+      } else {
+        value = value.sort();
+      }
+    }
+    value = Array.isArray(value) ? value.join(',') : String(value);
+    return `${key}:${value}`;
+  }).join('|');
+  return `subscription:${cacheKey}`;
+}
+
+// Rate-limit messages and cache
+class rateLimiter {
   constructor(rate, capacity) {
     this.tokens = capacity;
     this.lastRefillTime = Date.now();
@@ -171,8 +263,24 @@ class RateLimiter {
     this.lastRefillTime = now;
   }
 }
-const messageRateLimiter = new RateLimiter(100 / 1000, 200);
+async function getEventFromCacheOrKV(eventId) {
+  if (!kvCacheRateLimiter.removeToken()) {
+    throw new Error('Rate limit exceeded for KV store access');
+  }
+  const cacheKey = `event:${eventId}`;
+  let event = relayCache.get(cacheKey);
+  if (event) {
+    return event;
+  }
+  event = await relayDb.get(cacheKey, { type: 'json' });
+  if (event) {
+    relayCache.set(cacheKey, event);
+  }
+  return event;
+}
 const pubkeyRateLimiters = new Map();
+const messageRateLimiter = new rateLimiter(100 / 1000, 200);
+const kvCacheRateLimiter = new rateLimiter(1 / 1.1, 200);
 
 // Handle event requests (NIP-01)
 async function handleWebSocket(event, request) {
@@ -229,11 +337,16 @@ async function processEvent(event, server) {
       sendOK(server, event.id, false, `Event kind ${event.kind} is not allowed.`);
       return;
     }
+    // Check for blocked content
+    if (containsBlockedContent(event)) {
+      sendOK(server, event.id, false, "This event contains blocked content.");
+      return;
+    }
     // Apply pubkey rate limiter for specific event kinds
     if ([1, 3, 4, 5].includes(event.kind)) {
       let pubkeyRateLimiter = pubkeyRateLimiters.get(event.pubkey);
       if (!pubkeyRateLimiter) {
-        pubkeyRateLimiter = new RateLimiter(1 / 1000, 60); // 60 events per minute
+        pubkeyRateLimiter = new rateLimiter(10 / 60000, 10); // 10 events per minute
         pubkeyRateLimiters.set(event.pubkey, pubkeyRateLimiter);
       }
       if (!pubkeyRateLimiter.removeToken()) {
@@ -246,28 +359,37 @@ async function processEvent(event, server) {
       await processDeletionEvent(event, server);
       return;
     }
-    const eventKey = `event:${event.id}`;
-    // Event not found in KV store, retrieve from KV store using event ID
-    const existingEvent = await relayDb.get(eventKey, "json");
+    const cacheKey = `event:${event.id}`;
+    const cachedEvent = relayCache.get(cacheKey);
+    if (cachedEvent) {
+      // Event found in cache, skip KV store request
+      sendOK(server, event.id, false, "Duplicate. Event dropped.");
+      return;
+    }
+    // Event not found in cache, retrieve from KV store
+    const existingEvent = await relayDb.get(cacheKey, "json");
     if (existingEvent) {
-      // Event already exists, drop the duplicate
+      // Event already exists, update cache and recent events cache
+      relayCache.set(cacheKey, existingEvent);
+      // Update the recent events cache
+      let recentEvents = relayCache.get(recentEventsCache) || [];
+      recentEvents.push(existingEvent);
+      relayCache.set(recentEventsCache, recentEvents);
       sendOK(server, event.id, false, "Duplicate. Event dropped.");
       return;
     }
     const isValidSignature = await verifyEventSignature(event);
     if (isValidSignature) {
-      // Get the current event count
-      const eventCountKey = "event_count";
-      let eventCount = await relayDb.get(eventCountKey, { type: "text" });
-      eventCount = parseInt(eventCount || "0");
-      // Increment the event count and store the event with the incremented count
-      const newEventCount = eventCount + 1;
-      const eventKey = `event:${newEventCount}`;
-      await relayDb.put(eventKey, JSON.stringify(event));
-      await relayDb.put(eventCountKey, newEventCount.toString());
-      // Store the event in KV store using event ID
-      const eventIdKey = `event:${event.id}`;
-      await relayDb.put(eventIdKey, JSON.stringify(event));
+      // Store the event in KV store and cache
+      await relayDb.put(cacheKey, JSON.stringify(event));
+      relayCache.set(cacheKey, event);
+      // Update the recent events cache
+      let recentEvents = relayCache.get(recentEventsCache) || [];
+      recentEvents.unshift(event);
+      if (recentEvents.length > 100) {
+        recentEvents = recentEvents.slice(0, 100);
+      }
+      relayCache.set(recentEventsCache, recentEvents);
       sendOK(server, event.id, true, "");
     } else {
       sendOK(server, event.id, false, "Invalid: signature verification failed.");
@@ -282,70 +404,103 @@ async function processEvent(event, server) {
 async function processReq(message, server) {
   const subscriptionId = message[1];
   const filters = message[2] || {};
-  if (Object.keys(filters).length === 0) {
-    // If no filters are provided, send an error and return
-    server.send(JSON.stringify(["NOTICE", subscriptionId, "No filters provided. At least one filter is required."]));
-    server.send(JSON.stringify(["EOSE", subscriptionId]));
-    return;
-  }
+  const cacheKey = generateSubscriptionCacheKey(filters);
   let events = [];
-  const maxEvents = 1000;
-  const eventCountKey = "event_count";
-  let eventCount = await relayDb.get(eventCountKey, { type: "text" });
-  eventCount = parseInt(eventCount || "0");
-  let fetchedEvents = 0;
-  for (let i = 1; i <= eventCount && fetchedEvents < maxEvents; i++) {
-    const eventKey = `event:${i}`;
-    try {
-      const eventValue = await relayDb.get(eventKey, { type: "text" });
-      if (eventValue) {
-        const event = JSON.parse(eventValue);
-        if (isEventMatchingFilters(event, filters)) {
-          events.push(event);
-          fetchedEvents++;
-        }
+  // Check the cache for filtered events
+  let cachedEvents = relayCache.get(cacheKey);
+  if (cachedEvents) {
+    events = cachedEvents;
+  } else {
+    let recentEvents = relayCache.get(recentEventsCache) || [];
+    events = recentEvents.filter(event => {
+      if (filters.ids && !filters.ids.includes(event.id)) {
+        return false;
       }
-    } catch (error) {
-      console.error(`Error retrieving event ${eventKey}:`, error);
+      if (filters.kinds && !filters.kinds.includes(event.kind)) {
+        return false;
+      }
+      if (filters.authors && !filters.authors.includes(event.pubkey)) {
+        return false;
+      }
+      if (filters['#e'] && !event.tags.some(tag => tag[0] === 'e' && filters['#e'].includes(tag[1]))) {
+        return false;
+      }
+      if (filters['#p'] && !event.tags.some(tag => tag[0] === 'p' && filters['#p'].includes(tag[1]))) {
+        return false;
+      }
+      if (filters.since && event.created_at < filters.since) {
+        return false;
+      }
+      if (filters.until && event.created_at > filters.until) {
+        return false;
+      }
+      return true;
+    });
+    if (events.length === 0) {
+      const filterPromises = Object.entries(filters).map(async ([filterKey, filterValue]) => {
+        if (filterKey === 'ids') {
+          const eventPromises = filterValue.map(async (eventId) => {
+            try {
+              if (!kvCacheRateLimiter.removeToken()) {
+                throw new Error('Rate limit exceeded for KV store access');
+              }
+              const event = await getEventFromCacheOrKV(eventId);
+              return event;
+            } catch (error) {
+              console.error(`Error retrieving event ${eventId}:`, error);
+              return null;
+            }
+          });
+          return Promise.all(eventPromises);
+        } else if (filterKey === 'kinds' || filterKey === 'authors' || filterKey === '#e' || filterKey === '#p' || filterKey === 'since' || filterKey === 'until') {
+          try {
+            if (!kvCacheRateLimiter.removeToken()) {
+              throw new Error('Rate limit exceeded for KV store access');
+            }
+            const eventKeys = await relayDb.list({ prefix: "event:", limit: 1000 });
+            const eventPromises = eventKeys.keys.map(async (key) => {
+              try {
+                const event = await getEventFromCacheOrKV(key.name.replace('event:', ''));
+                return event;
+              } catch (error) {
+                console.error(`Error retrieving event ${key.name}:`, error);
+                return null;
+              }
+            });
+            const fetchedEvents = (await Promise.all(eventPromises)).filter(event => event !== null);
+            return fetchedEvents.filter(event => {
+              if (filterKey === 'kinds') {
+                return filterValue.includes(event.kind);
+              } else if (filterKey === 'authors') {
+                return filterValue.includes(event.pubkey);
+              } else if (filterKey === '#e') {
+                return event.tags.some(tag => tag[0] === 'e' && filterValue.includes(tag[1]));
+              } else if (filterKey === '#p') {
+                return event.tags.some(tag => tag[0] === 'p' && filterValue.includes(tag[1]));
+              } else if (filterKey === 'since') {
+                return event.created_at >= filterValue;
+              } else if (filterKey === 'until') {
+                return event.created_at <= filterValue;
+              }
+            });
+          } catch (error) {
+            console.error(`Error retrieving events for ${filterKey}:`, error);
+            return [];
+          }
+        }
+      });
+      const filterResults = await Promise.all(filterPromises);
+      events = filterResults.flat().filter(event => event !== null);
     }
+    relayCache.set(cacheKey, events);
   }
   if (filters.limit && events.length > filters.limit) {
     events = events.slice(0, filters.limit);
-  }
-  if (events.length === 0) {
-    // If no events match the filters, send an error and return
-    server.send(JSON.stringify(["NOTICE", subscriptionId, "No events found matching the provided filters."]));
-    server.send(JSON.stringify(["EOSE", subscriptionId]));
-    return;
   }
   for (const event of events) {
     server.send(JSON.stringify(["EVENT", subscriptionId, event]));
   }
   server.send(JSON.stringify(["EOSE", subscriptionId]));
-}
-function isEventMatchingFilters(event, filters) {
-  if (filters.ids && !filters.ids.includes(event.id)) {
-    return false;
-  }
-  if (filters.kinds && !filters.kinds.includes(event.kind)) {
-    return false;
-  }
-  if (filters.authors && !filters.authors.includes(event.pubkey)) {
-    return false;
-  }
-  if (filters['#e'] && !event.tags.some(tag => tag[0] === 'e' && filters['#e'].includes(tag[1]))) {
-    return false;
-  }
-  if (filters['#p'] && !event.tags.some(tag => tag[0] === 'p' && filters['#p'].includes(tag[1]))) {
-    return false;
-  }
-  if (filters.since && event.created_at < filters.since) {
-    return false;
-  }
-  if (filters.until && event.created_at > filters.until) {
-    return false;
-  }
-  return true;
 }
 
 // Handles CLOSE messages
@@ -371,20 +526,8 @@ async function processDeletionEvent(deletionEvent, server) {
         const eventKey = `event:${eventId}`;
         const event = await relayDb.get(eventKey, "json");
         if (event && event.pubkey === deletionEvent.pubkey) {
-          // Delete the event entry stored with the event ID
           await relayDb.delete(eventKey);
-          // Find and delete the event entry stored with the event count
-          const eventCountKey = "event_count";
-          let eventCount = await relayDb.get(eventCountKey, { type: "text" });
-          eventCount = parseInt(eventCount || "0");
-          for (let i = 1; i <= eventCount; i++) {
-            const countEventKey = `event:${i}`;
-            const countEvent = await relayDb.get(countEventKey, "json");
-            if (countEvent && countEvent.id === eventId) {
-              await relayDb.delete(countEventKey);
-              break;
-            }
-          }   
+          relayCache.delete(eventId);
           return true;
         }
         return false;
@@ -403,7 +546,6 @@ async function processDeletionEvent(deletionEvent, server) {
     sendOK(server, deletionEvent.id, false, `Error processing deletion event: ${error.message}`);
   }
 }
-
 function sendOK(server, eventId, status, message) {
   server.send(JSON.stringify(["OK", eventId, status, message]));
 }
