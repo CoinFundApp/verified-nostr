@@ -131,6 +131,13 @@ async function isPubkeyAllowed(pubkey) {
     return allowedPubkeys.includes(pubkey);
 }
 
+// Blast events to other relays
+const blastRelays = [
+  "wss://nostr.mutinywallet.com",
+  "wss://bostr.online"
+  // ... add more relays
+];
+
 addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -155,7 +162,6 @@ addEventListener("fetch", (event) => {
     await flushEventBuffer();
   }, flushInterval);
 });
-
 async function handleRelayInfoRequest() {
   const headers = new Headers({
     "Content-Type": "application/nostr+json",
@@ -165,7 +171,6 @@ async function handleRelayInfoRequest() {
   });
   return new Response(JSON.stringify(relayInfo), { status: 200, headers: headers });
 }
-
 async function serveFavicon() {
   const response = await fetch(relayIcon);
   if (response.ok) {
@@ -178,7 +183,6 @@ async function serveFavicon() {
   }
   return new Response(null, { status: 404 });
 }
-
 async function handleNIP05Request(url) {
   const name = url.searchParams.get("name");
   if (!name) {
@@ -200,7 +204,7 @@ async function handleNIP05Request(url) {
     },
     relays: {
       [pubkey]: [
-        // Add relay URLs for NIP-05 users
+        // ... add relays for NIP-05 users
       ],
     },
   };
@@ -264,7 +268,7 @@ async function flushEventBuffer() {
   }
 }
 
-// Rate-limit messages and cache
+// Rate limit messages and cache
 class rateLimiter {
   constructor(rate, capacity) {
     this.tokens = capacity;
@@ -306,8 +310,9 @@ async function getEventFromCacheOrKV(eventId) {
 const pubkeyRateLimiters = new Map();
 const messageRateLimiter = new rateLimiter(100 / 1000, 200);
 const kvCacheRateLimiter = new rateLimiter(1 / 1.1, 200);
+const excludedRateLimitKinds = []; // kinds to exclude from rate limiting Ex: 1, 2, 3
 
-// Handle event requests (NIP-01)
+// Handles event requests (NIP-01)
 async function handleWebSocket(event, request) {
   const { 0: client, 1: server } = new WebSocketPair();
   server.accept();
@@ -318,7 +323,7 @@ async function handleWebSocket(event, request) {
       const shouldFlushBuffer =
         eventBuffer.length >= bufferSize ||
         (currentTime - lastFlushTime >= flushInterval);
-  
+
       if (shouldFlushBuffer) {
         await flushEventBuffer();
         lastFlushTime = currentTime;
@@ -326,7 +331,6 @@ async function handleWebSocket(event, request) {
       startFlushTimer();
     }, flushInterval);
   };
-
   server.addEventListener("message", async (messageEvent) => {
     event.waitUntil(
       (async () => {
@@ -356,12 +360,10 @@ async function handleWebSocket(event, request) {
       })()
     );
   });
-
   server.addEventListener("close", (event) => {
     console.log("WebSocket closed", event.code, event.reason);
     clearTimeout(flushTimer);
   });
-
   return new Response(null, {
     status: 101,
     webSocket: client,
@@ -386,8 +388,8 @@ async function processEvent(event, server) {
       sendOK(server, event.id, false, "This event contains blocked content.");
       return;
     }
-    // Apply pubkey rate limiter for specific event kinds
-    if ([1, 3, 4, 5, 7].includes(event.kind)) {
+    // Rate limit all event kinds except excluded
+    if (!excludedRateLimitKinds.includes(event.kind)) {
       let pubkeyRateLimiter = pubkeyRateLimiters.get(event.pubkey);
       if (!pubkeyRateLimiter) {
         pubkeyRateLimiter = new rateLimiter(10 / 60000, 10); // 10 events per minute
@@ -409,17 +411,15 @@ async function processEvent(event, server) {
       sendOK(server, event.id, false, "Duplicate. Event dropped.");
       return;
     }
-
     const isValidSignature = await verifyEventSignature(event);
     if (isValidSignature) {
       const cacheKey = `event:${event.id}`;
-
       // Store the event in the in-memory cache
       relayCache.set(cacheKey, event);
-
       // Add the event to the buffer
       eventBuffer.push(event);
-
+      // Blast the event to other relays
+      await blastEventToRelays(event);
       sendOK(server, event.id, true, "");
     } else {
       sendOK(server, event.id, false, "Invalid: signature verification failed.");
@@ -540,6 +540,25 @@ async function closeSubscription(subscriptionId, server) {
   } catch (error) {
     console.error("Error closing subscription:", error);
     sendError(server, `error: failed to close subscription ${subscriptionId}`);
+  }
+}
+
+// Handles blasting event to other relays
+async function blastEventToRelays(event) {
+  for (const relayUrl of blastRelays) {
+    try {
+      const socket = new WebSocket(relayUrl);
+      socket.addEventListener("open", () => {
+        const eventMessage = JSON.stringify(["EVENT", event]);
+        socket.send(eventMessage);
+        socket.close();
+      });
+      socket.addEventListener("error", (error) => {
+        console.error(`Error blasting event to relay ${relayUrl}:`, error);
+      });
+    } catch (error) {
+      console.error(`Error blasting event to relay ${relayUrl}:`, error);
+    }
   }
 }
 
