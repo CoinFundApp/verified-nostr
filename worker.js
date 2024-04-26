@@ -8,7 +8,7 @@ const relayInfo = {
     contact: "support@verified-nostr.com",
     supported_nips: [1, 2, 4, 5, 9, 11, 12, 15, 16, 20, 22, 33, 40],
     software: "https://github.com/Spl0itable/nosflare",
-    version: "2.15.10",
+    version: "2.16.11",
 };
 
 // Relay favicon
@@ -228,9 +228,9 @@ class rateLimiter {
     this.lastRefillTime = now;
   }
 }
-const pubkeyRateLimiters = new Map();
-const messageRateLimiter = new rateLimiter(100 / 1000, 200);
-const reqRateLimiter = new rateLimiter(100 / 60000, 100);
+const messageRateLimiter = new rateLimiter(100 / 60000, 100); // 100 messages per min
+const pubkeyRateLimiter = new rateLimiter(10 / 60000, 10); // 10 events per min
+const reqRateLimiter = new rateLimiter(100 / 60000, 100); // 100 reqs per min
 const excludedRateLimitKinds = []; // kinds to exclude from rate limiting Ex: 1, 2, 3
 
 // Handles websocket messages
@@ -298,11 +298,6 @@ async function processEvent(event, server) {
     }
     // Rate limit all event kinds except excluded
     if (!excludedRateLimitKinds.includes(event.kind)) {
-      let pubkeyRateLimiter = pubkeyRateLimiters.get(event.pubkey);
-      if (!pubkeyRateLimiter) {
-        pubkeyRateLimiter = new rateLimiter(10 / 60000, 10); // 10 events per minute
-        pubkeyRateLimiters.set(event.pubkey, pubkeyRateLimiter);
-      }
       if (!pubkeyRateLimiter.removeToken()) {
         sendOK(server, event.id, false, "Rate limit exceeded. Please try again later.");
         return;
